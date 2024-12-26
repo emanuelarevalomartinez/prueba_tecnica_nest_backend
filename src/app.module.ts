@@ -11,7 +11,7 @@ import { ParkingCapacityModule } from './parking-capacity/parking-capacity.modul
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: "localhost",
+      host: "localhost", 
       port: 5444,
       username: "enterprisedb",
       password: "4444",
