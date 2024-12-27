@@ -1,10 +1,11 @@
 import { Column, Entity, PrimaryColumn } from "typeorm";
+import { Roles } from "../enums/roles";
 
 
 @Entity("users")
 export class User {
-    
-@PrimaryColumn()
+
+@PrimaryColumn("uuid", { nullable: false })
 id: string;
 
 
@@ -18,6 +19,9 @@ email: string;
 
 @Column("text", { nullable: false })
 password: string;
+
+@Column("simple-array", { nullable: false })
+roles: Roles[];
 
 
 }
