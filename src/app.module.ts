@@ -6,16 +6,18 @@ import { CarModule } from './car/car.module';
 import { ParkingModule } from './parking/parking.module';
 import { HistoricalModule } from './historical/historical.module';
 import { ParkingCapacityModule } from './parking-capacity/parking-capacity.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: "localhost", 
-      port: 5444,
-      username: "enterprisedb",
-      password: "4444",
-      database: "prueba_tecnica_nest_backend",
+      host: process.env.DB_HOST, 
+      port: +process.env.DB_PORT,
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
       entities: [User],
       synchronize: true,
     }),

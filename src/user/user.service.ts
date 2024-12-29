@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,20 +12,27 @@ import { v4 as uuid } from 'uuid';
 import { Roles } from './enums/roles';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { validate as isUuid } from 'uuid';
 import {
   CreateUserValidateExist,
   LoginUserInterface,
   RegisterUserInterface,
 } from './interfaces/user.interfaces';
+import { JwtPayload } from './interfaces/jwt-strategy-payload.interface';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly jwtService: JwtService,
   ) {}
 
-  async registerUser(createUserDto: CreateUserDto): Promise<RegisterUserInterface> {
+  async registerUser(
+    createUserDto: CreateUserDto,
+  ): Promise<RegisterUserInterface> {
     const { ...data } = createUserDto;
 
     const userExist = await this.findOneByNameOrEmail(data.name, data.email);
@@ -44,14 +55,14 @@ export class UserService {
       throw new BadRequestException('user was not created');
     }
 
-     await this.userRepository.save(createNewUser);
+    await this.userRepository.save(createNewUser);
 
-    return{
+    return {
       name: createNewUser.name,
       email: createNewUser.email,
       roles: createNewUser.roles,
-      token: "token temporal",
-    }
+      token: this.getJwToken({ id: createNewUser.id }),
+    };
   }
 
   async loginUser(loginUserDto: LoginUserDto): Promise<LoginUserInterface> {
@@ -77,6 +88,19 @@ export class UserService {
       roles: userFound.roles,
       token: 'token generico',
     };
+  }
+
+  async findUser(idUser: string): Promise<User> {
+
+    if (!isUuid(idUser)) {
+      throw new BadRequestException(`Invalid UUID format: ${idUser}`);
+    }
+    const findUser = await this.userRepository.findOneBy({ id: idUser });
+  
+    if (!findUser) {
+      throw new NotFoundException(`user with ${idUser} not found`);
+    }
+    return findUser;
   }
 
   async findOneByNameOrEmail(
@@ -116,23 +140,49 @@ export class UserService {
     };
   }
 
-  // create(createUserDto: CreateUserDto) {
-  //   return 'This action adds a new user';
-  // }
+  async updateUser(idUser: string, updateUserDto: UpdateUserDto) {
 
-  // findAll() {
-  //   return `This action returns all user`;
-  // }
+    const searchUser = await this.findUser(idUser);
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} user`;
-  // }
+    if (searchUser) {
+      const { ...data } = updateUserDto;
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+      const userExist = await this.findOneByNameOrEmail(data.name, data.email);
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
+      if (userExist.nameStock || userExist.emailStock) {
+        throw new BadRequestException('user or email already exist');
+      }
+
+      // if(!data.roles.includes(Roles.ADMIN || Roles.EMPLOYEE || Roles.CLIENT)){
+      //    throw new BadRequestException("user does not have a valid roles");
+      // }
+      
+      data.roles.forEach(  (rol)=> {
+             if( rol !== Roles.CLIENT && rol !== Roles.EMPLOYEE && rol !== Roles.ADMIN){
+              throw new BadRequestException("user does not have a valid roles");
+           }
+      } )
+
+      data.password = await bcrypt.hash(data.password, 10);
+
+      const updateUser = this.userRepository.merge(searchUser, data);
+
+      await this.userRepository.save(updateUser);
+    } else {
+      throw new NotFoundException(`User with id ${idUser} not found`);
+    }
+  }
+
+  async deleteUser(idUser: string) {
+    const { affected } = await this.userRepository.delete(idUser);
+
+    if (affected == 0) {
+      throw new NotFoundException(`user with id ${idUser} not found`);
+    }
+  }
+
+  private getJwToken(payload: JwtPayload) {
+    const token = this.jwtService.sign(payload);
+    return token;
+  }
 }
