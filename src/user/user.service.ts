@@ -20,12 +20,16 @@ import {
   RegisterUserInterface,
 } from './interfaces/user.interfaces';
 import { JwtPayload } from './interfaces/jwt-strategy-payload.interface';
+import { CarService } from 'src/car/car.service';
+import { Car } from 'src/car/entities/car.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly carService: CarService,
 
     private readonly jwtService: JwtService,
   ) {}
@@ -46,6 +50,7 @@ export class UserService {
       email: data.email,
       id: uuid(),
       name: data.name,
+      cars: [],
       password: await bcrypt.hash(data.password, 10),
     };
 
@@ -57,10 +62,29 @@ export class UserService {
 
     await this.userRepository.save(createNewUser);
 
+    let carPromises = [];
+
+    if (data.cars && data.cars.length > 0) {
+       carPromises = data.cars.map(async (car) => {
+          return this.carService.create({
+              make: car.make,
+              model: car.model,
+              user: createNewUser,
+          });
+      });
+    await Promise.all(carPromises);
+    createNewUser.cars = carPromises;
+  }
+
+
+  
+  
+
     return {
       name: createNewUser.name,
       email: createNewUser.email,
       roles: createNewUser.roles,
+      cars: createNewUser.cars,
       token: this.getJwToken({ id: createNewUser.id }),
     };
   }

@@ -1,5 +1,6 @@
-import { IsArray, IsEmail, IsNotEmpty, IsString } from "class-validator";
+import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { Roles } from "../enums/roles";
+import { Car } from "src/car/entities/car.entity";
 
 export class CreateUserDto {
 
@@ -15,6 +16,11 @@ export class CreateUserDto {
     @IsString()
     @IsNotEmpty()
     password: string;
+
+
+    // @IsOptional()
+    @IsArray()
+    cars: Car[];
     
     // @IsArray()
     // @IsNotEmpty()

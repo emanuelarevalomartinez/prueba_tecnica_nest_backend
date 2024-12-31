@@ -1,9 +1,11 @@
+import { Car } from "src/car/entities/car.entity";
 
 export interface RegisterUserInterface{
     name: string;
     email:string;
     token:string;
     roles: string[];
+    cars: Car[];
 }
 
 
