@@ -1,6 +1,7 @@
-import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
+import { Column, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
 import { Roles } from "../enums/roles";
 import { Car } from "src/car/entities/car.entity";
+import { Parking } from "src/parking/entities/parking.entity";
 
 
 @Entity("users")
@@ -27,5 +28,6 @@ roles: Roles[];
 @OneToMany(() => Car, 
 (car) => car.user, { cascade: true, nullable: true })
 cars: Car[];
+
 
 }

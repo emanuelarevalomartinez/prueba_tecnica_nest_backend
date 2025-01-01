@@ -7,28 +7,35 @@ import { UpdateParkingDto } from './dto/update-parking.dto';
 export class ParkingController {
   constructor(private readonly parkingService: ParkingService) {}
 
-  @Post()
-  create(@Body() createParkingDto: CreateParkingDto) {
-    return this.parkingService.create(createParkingDto);
+
+  
+
+  @Post(":car")
+  create(
+    @Param("car") car: string,
+    @Body() createParkingDto: CreateParkingDto,
+  ) {
+    const numberCar = Number(car);
+    return this.parkingService.create(numberCar,createParkingDto);
   }
 
-  @Get()
-  findAll() {
-    return this.parkingService.findAll();
-  }
+  // @Get()
+  // findAll() {
+  //   return this.parkingService.findAll();
+  // }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.parkingService.findOne(+id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.parkingService.findOne(+id);
+  // }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateParkingDto: UpdateParkingDto) {
-    return this.parkingService.update(+id, updateParkingDto);
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() updateParkingDto: UpdateParkingDto) {
+  //   return this.parkingService.update(+id, updateParkingDto);
+  // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.parkingService.remove(+id);
-  }
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.parkingService.remove(+id);
+  // }
 }

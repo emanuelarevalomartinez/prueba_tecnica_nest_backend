@@ -85,7 +85,7 @@ export class UserService {
       email: createNewUser.email,
       roles: createNewUser.roles,
       cars: createNewUser.cars,
-      token: this.getJwToken({ id: createNewUser.id }),
+      token: this.getJwToken({ id: createNewUser.id, roles: createNewUser.roles }),
     };
   }
 
@@ -110,22 +110,31 @@ export class UserService {
       name: userFound.name,
       email: userFound.email,
       roles: userFound.roles,
-      token: 'token generico',
+      cars: userFound.cars,
+      token: this.getJwToken({ id: userFound.id, roles: userFound.roles }),
     };
   }
 
-  async findUser(idUser: string): Promise<User> {
+   async findUserByParam(param : { [key: string] :string}): Promise<User> {
 
-    if (!isUuid(idUser)) {
-      throw new BadRequestException(`Invalid UUID format: ${idUser}`);
-    }
-    const findUser = await this.userRepository.findOneBy({ id: idUser });
+    
+    const findUser = await this.userRepository.findOne(
+      { 
+        where: param,
+        relations: ["cars"] 
+        }
+    );
+
+
   
     if (!findUser) {
-      throw new NotFoundException(`user with ${idUser} not found`);
+      throw new NotFoundException(`user with ${ JSON.stringify(param) } not found`);
     }
+    
     return findUser;
   }
+
+  
 
   async findOneByNameOrEmail(
     name?: string,
@@ -164,9 +173,9 @@ export class UserService {
     };
   }
 
-  async updateUser(idUser: string, updateUserDto: UpdateUserDto) {
+  async updateUser(id: string, updateUserDto: UpdateUserDto) {
 
-    const searchUser = await this.findUser(idUser);
+    const searchUser = await this.findUserByParam( { id } );
 
     if (searchUser) {
       const { ...data } = updateUserDto;
@@ -176,10 +185,6 @@ export class UserService {
       if (userExist.nameStock || userExist.emailStock) {
         throw new BadRequestException('user or email already exist');
       }
-
-      // if(!data.roles.includes(Roles.ADMIN || Roles.EMPLOYEE || Roles.CLIENT)){
-      //    throw new BadRequestException("user does not have a valid roles");
-      // }
       
       data.roles.forEach(  (rol)=> {
              if( rol !== Roles.CLIENT && rol !== Roles.EMPLOYEE && rol !== Roles.ADMIN){
@@ -193,7 +198,7 @@ export class UserService {
 
       await this.userRepository.save(updateUser);
     } else {
-      throw new NotFoundException(`User with id ${idUser} not found`);
+      throw new NotFoundException(`User with id ${id} not found`);
     }
   }
 

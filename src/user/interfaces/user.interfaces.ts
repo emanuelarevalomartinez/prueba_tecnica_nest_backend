@@ -15,6 +15,7 @@ export interface LoginUserInterface {
     email:string;
     token:string;
     roles: string[];
+    cars: Car[];
 
 }
 

@@ -7,6 +7,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CarModule } from 'src/car/car.module';
+import { JwTokenStrategy } from './strategy/jwtStrategy';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { CarModule } from 'src/car/car.module';
     })
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService,JwTokenStrategy],
+  exports: [UserService],
 })
 export class UserModule {}

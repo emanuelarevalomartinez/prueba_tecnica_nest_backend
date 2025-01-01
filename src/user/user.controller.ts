@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { Autentication } from './decorators/auentication';
+import { Roles } from './enums/roles';
+import { User } from './entities/user.entity';
 
 @Controller('user')
 export class UserController {
@@ -15,14 +18,27 @@ export class UserController {
     return this.userService.registerUser(createUserDto);
   }
 
-  @Get("login")
+  @Post("login")
   login(@Body() LoginUserDto: LoginUserDto){
      return this.userService.loginUser(LoginUserDto);
   }
 
-  // @Get(":idUser")
-  //   findOne(@Param("idUser") idUser: string){
-  //   }
+  @Get(":key/:param")
+    findOne(
+      @Param("key") key:string,
+      @Param("param") param: string,
+    )
+      {
+      return this.userService.findUserByParam( { [key]: param } );
+    }
+
+ 
+  @Get()
+  @Autentication( Roles.CLIENT )
+  hello(@Req() req: Request){
+    
+    return "hello everyword"
+  }
 
   @Patch(":idUser")
   updateUser(@Param("idUser") idUser: string, @Body() updateUserDto: UpdateUserDto){
