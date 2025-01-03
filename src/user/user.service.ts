@@ -13,7 +13,6 @@ import { Roles } from './enums/roles';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { validate as isUuid } from 'uuid';
 import {
   CreateUserValidateExist,
   LoginUserInterface,
@@ -47,10 +46,10 @@ export class UserService {
 
     const newUser: User = {
       roles: [Roles.CLIENT],
-      email: data.email,
+      email: data.email,  
       id: uuid(),
       name: data.name,
-      cars: [],
+      cars: [], 
       password: await bcrypt.hash(data.password, 10),
     };
 

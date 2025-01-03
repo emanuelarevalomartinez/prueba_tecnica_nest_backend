@@ -25,11 +25,14 @@ make:string;
 @Column("text", {  nullable: false})
 model:string;
 
-@Column("text", {  nullable: false})
-date:string;
+// @Column("text", {  nullable: false})
+// date:string;
 
-@Column("text", {  nullable: false})
-hour:string;
+// @Column("text", {  nullable: false})
+// hour:string;
+
+@Column({ type: "timestamp without time zone" ,  nullable: false} )
+date: Date;
 
 
 }

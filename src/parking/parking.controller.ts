@@ -19,6 +19,11 @@ export class ParkingController {
     return this.parkingService.create(numberCar,createParkingDto);
   }
 
+  @Get()
+  test(){
+    return this.parkingService.hola()
+  }
+
   // @Get()
   // findAll() {
   //   return this.parkingService.findAll();
