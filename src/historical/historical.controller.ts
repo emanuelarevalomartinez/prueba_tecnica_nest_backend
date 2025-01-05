@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { HistoricalService } from './historical.service';
 import { CreateHistoricalDto } from './dto/create-historical.dto';
 import { UpdateHistoricalDto } from './dto/update-historical.dto';
@@ -7,28 +16,33 @@ import { UpdateHistoricalDto } from './dto/update-historical.dto';
 export class HistoricalController {
   constructor(private readonly historicalService: HistoricalService) {}
 
-  @Post()
-  create(@Body() createHistoricalDto: CreateHistoricalDto) {
-    return this.historicalService.create(createHistoricalDto);
-  }
-
   @Get()
-  findAll() {
-    return this.historicalService.findAll();
+  findAll(@Query('page') page: string, @Query('limit') limit: string) {
+    return this.historicalService.findAll(page, limit);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.historicalService.findOne(+id);
-  }
+  // @Post()
+  // create(@Body() createHistoricalDto: CreateHistoricalDto) {
+  //   return this.historicalService.create(createHistoricalDto);
+  // }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateHistoricalDto: UpdateHistoricalDto) {
-    return this.historicalService.update(+id, updateHistoricalDto);
-  }
+  // @Get()
+  // findAll() {
+  //   return this.historicalService.findAll();
+  // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.historicalService.remove(+id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.historicalService.findOne(+id);
+  // }
+
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() updateHistoricalDto: UpdateHistoricalDto) {
+  //   return this.historicalService.update(+id, updateHistoricalDto);
+  // }
+
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.historicalService.remove(+id);
+  // }
 }

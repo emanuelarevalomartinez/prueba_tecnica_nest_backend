@@ -44,12 +44,22 @@ export class UserService {
       throw new BadRequestException('user or email already exist');
     }
 
+    data.roles.forEach((rol) => {
+      if (
+        rol !== Roles.CLIENT &&
+        rol !== Roles.EMPLOYEE &&
+        rol !== Roles.ADMIN
+      ) {
+        throw new BadRequestException('user does not have a valid roles');
+      }
+    });
+
     const newUser: User = {
-      roles: [Roles.CLIENT],
-      email: data.email,  
+      roles: data.roles,
+      email: data.email,
       id: uuid(),
       name: data.name,
-      cars: [], 
+      cars: [],
       password: await bcrypt.hash(data.password, 10),
     };
 
@@ -64,27 +74,26 @@ export class UserService {
     let carPromises = [];
 
     if (data.cars && data.cars.length > 0) {
-       carPromises = data.cars.map(async (car) => {
-          return this.carService.create({
-              make: car.make,
-              model: car.model,
-              user: createNewUser,
-          });
+      carPromises = data.cars.map(async (car) => {
+        return this.carService.create({
+          make: car.make,
+          model: car.model,
+          user: createNewUser,
+        });
       });
-    await Promise.all(carPromises);
-    createNewUser.cars = carPromises;
-  }
-
-
-  
-  
+      await Promise.all(carPromises);
+      createNewUser.cars = carPromises;
+    }
 
     return {
       name: createNewUser.name,
       email: createNewUser.email,
       roles: createNewUser.roles,
       cars: createNewUser.cars,
-      token: this.getJwToken({ id: createNewUser.id, roles: createNewUser.roles }),
+      token: this.getJwToken({
+        id: createNewUser.id,
+        roles: createNewUser.roles,
+      }),
     };
   }
 
@@ -114,26 +123,18 @@ export class UserService {
     };
   }
 
-   async findUserByParam(param : { [key: string] :string}): Promise<User> {
-
-    
-    const findUser = await this.userRepository.findOne(
-      { 
-        where: param,
-        relations: ["cars"] 
-        }
-    );
-
-
-  
+  async findUserByParam(param: { [key: string]: string }): Promise<User> {
+    const findUser = await this.userRepository.findOne({
+      where: param,
+      relations: ['cars'],
+    });
     if (!findUser) {
-      throw new NotFoundException(`user with ${ JSON.stringify(param) } not found`);
+      throw new NotFoundException(
+        `user with ${JSON.stringify(param)} not found`,
+      );
     }
-    
     return findUser;
   }
-
-  
 
   async findOneByNameOrEmail(
     name?: string,
@@ -172,9 +173,8 @@ export class UserService {
     };
   }
 
-  async updateUser(id: string, updateUserDto: UpdateUserDto) {
-
-    const searchUser = await this.findUserByParam( { id } );
+  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const searchUser = await this.findUserByParam({ id });
 
     if (searchUser) {
       const { ...data } = updateUserDto;
@@ -184,18 +184,27 @@ export class UserService {
       if (userExist.nameStock || userExist.emailStock) {
         throw new BadRequestException('user or email already exist');
       }
-      
-      data.roles.forEach(  (rol)=> {
-             if( rol !== Roles.CLIENT && rol !== Roles.EMPLOYEE && rol !== Roles.ADMIN){
-              throw new BadRequestException("user does not have a valid roles");
-           }
-      } )
 
-      data.password = await bcrypt.hash(data.password, 10);
+      if (data.roles) {
+        data.roles.forEach((rol) => {
+          if (
+            rol !== Roles.CLIENT &&
+            rol !== Roles.EMPLOYEE &&
+            rol !== Roles.ADMIN
+          ) {
+            throw new BadRequestException('user does not have a valid roles');
+          }
+        });
+      }
+
+      if (data.password) {
+        data.password = await bcrypt.hash(data.password, 10);
+      }
 
       const updateUser = this.userRepository.merge(searchUser, data);
 
       await this.userRepository.save(updateUser);
+      return updateUser;
     } else {
       throw new NotFoundException(`User with id ${id} not found`);
     }

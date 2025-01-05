@@ -2,9 +2,13 @@
 
 export interface CreateParkingInterface {
     idParking: string;
+    idUser:string;
+    idCar:string;
     nameUser: string;
     make: string;
     model: string;
-    date: Date;
+    dateInit: Date;
+    dateEnd:Date;
+    parkingPosition: number;
 
 }

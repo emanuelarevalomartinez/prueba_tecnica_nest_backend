@@ -25,14 +25,14 @@ make:string;
 @Column("text", {  nullable: false})
 model:string;
 
-// @Column("text", {  nullable: false})
-// date:string;
-
-// @Column("text", {  nullable: false})
-// hour:string;
+@Column("numeric", { nullable: false })
+parkingPosition:number;
 
 @Column({ type: "timestamp without time zone" ,  nullable: false} )
-date: Date;
+dateInit: Date;
+
+@Column({ type: "timestamp without time zone" ,  nullable: false} )
+dateEnd: Date;
 
 
 }

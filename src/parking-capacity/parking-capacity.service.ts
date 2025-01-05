@@ -45,24 +45,4 @@ export class ParkingCapacityService {
 
       return cant[0].capacityParking;
   }
-
-  // create(createParkingCapacityDto: CreateParkingCapacityDto) {
-  //   return 'This action adds a new parkingCapacity';
-  // }
-
-  // findAll() {
-  //   return `This action returns all parkingCapacity`;
-  // }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} parkingCapacity`;
-  // }
-
-  // update(id: number, updateParkingCapacityDto: UpdateParkingCapacityDto) {
-  //   return `This action updates a #${id} parkingCapacity`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} parkingCapacity`;
-  // }
 }

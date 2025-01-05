@@ -22,9 +22,9 @@ export class CreateUserDto {
     @IsArray()
     cars: Car[];
     
-    // @IsArray()
-    // @IsNotEmpty()
-    // roles: Roles[];
+    @IsArray()
+    @IsNotEmpty()
+    roles: Roles[];
     
 
     

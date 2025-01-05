@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ParkingService } from './parking.service';
 import { CreateParkingDto } from './dto/create-parking.dto';
 import { UpdateParkingDto } from './dto/update-parking.dto';
@@ -20,9 +20,22 @@ export class ParkingController {
   }
 
   @Get()
-  test(){
-    return this.parkingService.hola()
+  finAll(
+    @Query("page") page:number,
+    @Query("limit") limit: number,
+  ){
+    return this.parkingService.findAll(page, limit);
   }
+
+   @Delete(':idParking')
+  remove(@Param('idParking') idParking: string) {
+    return this.parkingService.remove(idParking);
+  }
+
+  // @Get("park")
+  // test2(){
+  //   return this.parkingService.parkingPositionAsignate()
+  // }
 
   // @Get()
   // findAll() {

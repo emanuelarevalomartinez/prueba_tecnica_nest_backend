@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import { Car } from './car/entities/car.entity';
 import { Parking } from './parking/entities/parking.entity';
 import { ParkingCapacity } from './parking-capacity/entities/parking-capacity.entity';
+import { Historical } from './historical/entities/historical.entity';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { ParkingCapacity } from './parking-capacity/entities/parking-capacity.en
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Car, Parking, ParkingCapacity],
+      entities: [User, Car, Parking, ParkingCapacity, Historical],
       synchronize: true,
     }),
     UserModule,

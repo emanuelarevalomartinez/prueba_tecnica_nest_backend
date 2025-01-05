@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateParkingDto } from './dto/create-parking.dto';
 import { UpdateParkingDto } from './dto/update-parking.dto';
 import { Parking } from './entities/parking.entity';
@@ -8,6 +8,7 @@ import { UserService } from 'src/user/user.service';
 import { v4 as uuid } from 'uuid'
 import { CreateParkingInterface } from './interfaces/parking.interfaces';
 import { ParkingCapacityService } from 'src/parking-capacity/parking-capacity.service';
+import { HistoricalService } from 'src/historical/historical.service';
 
 @Injectable()
 export class ParkingService {
@@ -19,12 +20,19 @@ constructor(
   private readonly userService: UserService,
 
   private readonly parkingCapacityService: ParkingCapacityService,
+
+  private readonly historicalService: HistoricalService,
 ){
 
 }
 
 
   async create( carNumber: number ,createParkingDto: CreateParkingDto): Promise<CreateParkingInterface> {
+
+
+    if( createParkingDto.positionParking < 1 ){
+      throw new BadRequestException("Parking position is not valid");
+    }
 
 
     const userExist = await this.userService.findUserByParam( { ["name"]: createParkingDto.nameUser } )
@@ -37,21 +45,12 @@ constructor(
        throw new BadRequestException(` user does not have ${carNumber} cars`)
     }
 
-    
-    const date = new Date();
+    const dateInit = new Date(createParkingDto.dateInit);
+    const dateEnd = new Date(createParkingDto.dateEnd);
 
-    // const dateMonthYear = date.toLocaleDateString("en-US", {
-    //   year: "numeric",
-    //   month: "2-digit",
-    //   day: "2-digit",
-    // })
-
-    // const time12Hours = date.toLocaleTimeString("en-US",{
-    //   hour: "2-digit",
-    //   minute: "2-digit",
-    //   second: "2-digit",
-    //   hour12: true,
-    // })
+    if(dateInit >= dateEnd ){
+       throw new BadRequestException("Date init can not be greater that date end");
+    }
 
 
     const newParking:Parking = {
@@ -60,88 +59,47 @@ constructor(
        idUser: userExist.id,
        model: userExist.cars[carNumber - 1].model,
        make: userExist.cars[carNumber - 1].make,
-       date: new Date(),
+       dateInit: dateInit,
+       dateEnd: dateEnd,
        nameUser: userExist.name,
+       parkingPosition: await this.parkingPositionAsignate(createParkingDto.positionParking),
     }
     
    const createNewParking = this.parkingRepository.create(newParking);
 
-  // console.log("capacity ",await this.parkingCapacityService.getParkingCapacity());
-
   const totalCars = await this.totalCarsOnParking();
   const totalCapacity= await this.parkingCapacityService.getParkingCapacity();
 
-  //TODO: tengo que hacer cumplir la ultima condicion
-  //? hacer que se verifique que hay tiempo disponible antes de reservar y un intervalo de tiempo
-
-//   const findUser = await this.userRepository
-//   .createQueryBuilder('user')
-//   .leftJoinAndSelect('user.cars', 'car')
-//   .select([
-//     'user.id AS id',
-//     'user.name AS name',
-//     'user.email AS email',
-//     "to_char(user.date, 'YYYY-MM-DD HH24:MI:SS') AS formatteddate", // Formatear la fecha
-//     'user.roles AS roles',  
-//     'car.idCar AS cars',
-//     'car.make AS make',
-//     'car.model AS model',
-//   ])
-//   .where(`user.${key} = :value`, { value })
-//   .getRawMany(); 
-
-// if (!findUser || findUser.length === 0) {
-//   throw new NotFoundException(`User with ${JSON.stringify(param)} not found`);
-// }
-// // console.log("findUser",findUser);
-
-// const allCarsFormTheUser: userCarsModelInterface[] = findUser
-// .filter((userCars: User) => userCars.cars)
-// .map((userCarsExist: ReturnUserCarsInterface) => ({
-//   id: userCarsExist.cars,
-//   make: userCarsExist.make,
-//   model: userCarsExist.model,
-// }));
-
-// const formattedUser: GetOneUserInterface = {
-//   id: findUser[0].id,
-//   name: findUser[0].name,
-//   email: findUser[0].email,
-//   date: findUser[0].formatteddate,
-//   roles: findUser[0].roles ? findUser[0].roles.split(',') : [],
-//   cars: allCarsFormTheUser,
-// };
-
-  // const ee = await this.parkingRepository.find({
-  //   where: {
-  //     date: dateMonthYear,
-  //   }
-  // })
-
-  // console.log(ee);
-  
-
    if(totalCars + 1 > totalCapacity ){
         throw new BadRequestException("There are not more capacity on the parking");
-        
    } else {
 
-    await this.parkingRepository.save(createNewParking);
+    const posibbleParkigTime = await this.findSameReservationTime(newParking.dateInit, newParking.dateEnd, createParkingDto.positionParking);
 
-    return {
-      idParking: createNewParking.idParking,
-      nameUser: createNewParking.nameUser,
-      make: createNewParking.make,
-      model: createNewParking.model,
-      date: createNewParking.date,
+    if(!posibbleParkigTime){
+         throw new BadRequestException(" Parking time intervale not posibble to assingn");
+    } else {
+
+      await this.historicalService.create({
+        activity: `Reservation Parking`,
+        idUser: createNewParking.idUser,
+        idCar: createNewParking.idParking,
+      })
+      await this.parkingRepository.save(createNewParking);
+
+      return {
+        idParking: createNewParking.idParking,
+        idUser: createNewParking.idUser,
+        idCar: createNewParking.idCar,
+        nameUser: createNewParking.nameUser,
+        make: createNewParking.make,
+        model: createNewParking.model,
+        dateInit: createNewParking.dateInit,
+        dateEnd: createNewParking.dateEnd,
+        parkingPosition: createNewParking.parkingPosition,
+      }
     }
    }
-   
-
-    
-
-    
-
   }
 
   async totalCarsOnParking() {
@@ -149,45 +107,88 @@ constructor(
     return cant;
   }
 
-  async findSameReservationTime(year:string, hour:string){
+  async parkingPositionAsignate(positionParking: number): Promise<number>{
+
+    let maxValue: number = await this.parkingCapacityService.getParkingCapacity();
+
+    if(positionParking > maxValue){
+       throw new BadRequestException("Parking position is not available");
+    }
+    return positionParking;
+  }
+
+  async findSameReservationTime(startDate:Date, endDate:Date, parkingPosition: number){
+    // estilo: 2025-01-03 01:08:28
+   
      const response = await this.parkingRepository
         .createQueryBuilder('parking')
         .select([
-          "to_char(parking.date, 'YYYY-MM-DD HH24:MI:SS') AS date"
+          "to_char(parking.dateInit, 'YYYY-MM-DD HH24:MI:SS') AS dateinit",
+          "to_char(parking.dateEnd, 'YYYY-MM-DD HH24:MI:SS') AS dateend",
         ])
+       .where("parking.dateInit <= :endDate", { endDate })
+        .andWhere("parking.dateEnd >= :startDate", { startDate })
+        .andWhere("parking.parkingPosition = :parkingPosition", { parkingPosition })
         .getRawMany()
 
-        console.log(response);
-        console.log(response[0].date);
-        
-
-        let dates: string[] = [];
-
-        // dates[0] = response[0].date  
-
-
-        //  response.forEach(reservation => {
-        //     dates[reservation] = response[reservation].date
-        //  });
-
-        for (let index = 0; index < response.length; index++) {
-          dates[index] = response[index].date
-          
+        if(!response){
+           throw new BadRequestException(" Parking intervale time not found ");
         }
-
-        //* aqui estan los datos en bruto de todas la fechas de parking hechas en el sistema hay que manejarlas
-        console.log(dates);
-        
-        
+        return response.length == 0;
   }
 
-  async hola(){
-    return this.findSameReservationTime("2024/01/2023", "22")
+  async findAll(page: number, limit: number){
+
+    const consultPage = page !== undefined ? Number(page) : 1;
+    const consultLimit = limit !== undefined ? Number(limit) : 5;
+    const skip = ( consultPage - 1 ) * consultLimit;
+
+    return await this.parkingRepository
+    .createQueryBuilder('parking')
+        .select([
+          "parking.idParking as idparking",
+          "parking.idUser as idpser",
+          "parking.idCar as idcar",
+          "parking.nameUser as nameuser",
+          "parking.make as make",
+          "parking.model as model",
+          "parking.parkingPosition as parkingposition",
+          "to_char(parking.dateInit, 'YYYY-MM-DD HH24:MI:SS') AS dateinit",
+          "to_char(parking.dateEnd, 'YYYY-MM-DD HH24:MI:SS') AS dateend",
+        ])
+        .orderBy("parking.parkingPosition", 'ASC')
+        .take( consultLimit )  
+        .skip( skip )
+        .getRawMany();
   }
 
-  // findAll() {
-  //   return `This action returns all parking`;
-  // }
+  async findOneParking(idParking: string): Promise<Parking> {
+     const response = await this.parkingRepository.findOne( {
+      where: { idParking: idParking }
+     } )
+
+     if(!response){
+       throw new NotFoundException(` Parking with id ${idParking} not found `)
+     }
+
+     return response;
+  }
+
+  async remove(idParking: string): Promise<string> {
+
+    const response = await this.findOneParking(idParking);
+
+     await this.historicalService.create({
+      idCar: response.idCar,
+      activity: "Cancel Parking", 
+      idUser: response.idUser,
+      })
+    await this.parkingRepository.delete( idParking );
+
+      
+
+      return "Parking reservation deleted successful"
+  }
 
   // findOne(id: number) {
   //   return `This action returns a #${id} parking`;

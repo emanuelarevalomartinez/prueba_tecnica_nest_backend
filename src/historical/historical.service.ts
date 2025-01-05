@@ -1,26 +1,75 @@
 import { Injectable } from '@nestjs/common';
 import { CreateHistoricalDto } from './dto/create-historical.dto';
 import { UpdateHistoricalDto } from './dto/update-historical.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Historical } from './entities/historical.entity';
+import { Repository } from 'typeorm';
+import { v4 as uuid } from 'uuid'
 
 @Injectable()
 export class HistoricalService {
-  create(createHistoricalDto: CreateHistoricalDto) {
-    return 'This action adds a new historical';
+
+  // TODO añadir evento para que se establezcan en finish las reservas cuando sobrepasan el tiempo solicitado
+  // TODO establecer las relaciones entre usuario y carro con parking y con historical y parking con historical
+  // TODO colocal las autorizaciones a los endpoints de cada modulo
+  // TODO Hacer que la fecha para reservar parking sea igual o superior a la actual y no anterior a la misma
+  // TODO añadir el metodo de get all en user en car actualizar en parking, historic y car y eliminar en car y historic
+  // TODO comenzar a hacer el testing dentro de los metodos 
+
+
+  constructor(
+    @InjectRepository(Historical)
+    private readonly historicalRepository: Repository<Historical>,
+  ){
+
   }
 
-  findAll() {
-    return `This action returns all historical`;
+  async create(createHistoricalDto: CreateHistoricalDto): Promise<Historical> {
+
+   const newHistoric = this.historicalRepository.create({
+    idHistoric: uuid(),
+    idUser: createHistoricalDto.idUser,
+    date: new Date(),
+    idCar: createHistoricalDto.idCar,
+    activity: createHistoricalDto.activity,  
+   })
+
+   return await this.historicalRepository.save(newHistoric);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} historical`;
+  
+
+  async findAll(page: string, limit: string) : Promise<Historical[]> {
+
+    const consultPage = page !== undefined ? Number(page) : 1;
+    const consultLimit = limit !== undefined ? Number(limit) : 5;
+    const skip = ( consultPage - 1 ) * consultLimit;
+
+   const response = await this.historicalRepository.createQueryBuilder("historic")
+   .select([
+      "historic.idHistoric as idhistoric",
+      "historic.idUser as iduser",
+      "historic.idCar as idcar",
+      "historic.activity as activity",
+      "to_char(historic.date, 'YYYY-MM-DD HH24:MI:SS') AS date"
+   ])
+   .orderBy("historic.date", 'ASC')
+   .take( consultLimit )  
+   .skip( skip )
+   .getRawMany();
+
+    return response;
   }
 
-  update(id: number, updateHistoricalDto: UpdateHistoricalDto) {
-    return `This action updates a #${id} historical`;
-  }
+  // findOne(id: number) {
+  //   return `This action returns a #${id} historical`;
+  // }
 
-  remove(id: number) {
-    return `This action removes a #${id} historical`;
-  }
+  // update(id: number, updateHistoricalDto: UpdateHistoricalDto) {
+  //   return `This action updates a #${id} historical`;
+  // }
+
+  // remove(id: number) {
+  //   return `This action removes a #${id} historical`;
+  // }
 }
