@@ -7,7 +7,7 @@ import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
 export class Parking {
 
 @PrimaryColumn("uuid")
-idParking:string;
+id_parking:string;
 
 
 @Column("uuid", { nullable: false })

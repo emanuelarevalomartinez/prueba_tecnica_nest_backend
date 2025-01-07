@@ -9,12 +9,14 @@ import { v4 as uuid } from 'uuid'
 @Injectable()
 export class HistoricalService {
 
-  // TODO añadir evento para que se establezcan en finish las reservas cuando sobrepasan el tiempo solicitado
-  // TODO establecer las relaciones entre usuario y carro con parking y con historical y parking con historical
   // TODO colocal las autorizaciones a los endpoints de cada modulo
-  // TODO Hacer que la fecha para reservar parking sea igual o superior a la actual y no anterior a la misma
-  // TODO añadir el metodo de get all en user en car actualizar en parking, historic y car y eliminar en car y historic
+  // TODO añadir los metodos faltantes
   // TODO comenzar a hacer el testing dentro de los metodos 
+  // TODO hacer la documentacion para descargar y ejecutar la api en un entorno personal usando markdown
+  // TODO utilizar swaer para documentar la api
+  // TODO añadir la ruta global /api
+  // TODO colecion de postmand de como consultar la api
+  // TODO hacer el modelo de datos del negocio ( las relaciones en la base de datos )
 
 
   constructor(
@@ -61,15 +63,15 @@ export class HistoricalService {
     return response;
   }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} historical`;
-  // }
+  async updateHistorical(idHistorical: string, updateHistoricalDto: UpdateHistoricalDto){
+    // TODO implementar
+  }
 
-  // update(id: number, updateHistoricalDto: UpdateHistoricalDto) {
-  //   return `This action updates a #${id} historical`;
-  // }
+  findOne(idHistoric: number) {
+    // TODO implementar
+  }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} historical`;
-  // }
+  remove(idHistoric: string) {
+    // TODO implementar
+  }
 }

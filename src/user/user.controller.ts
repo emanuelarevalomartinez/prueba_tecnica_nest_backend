@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -33,11 +33,19 @@ export class UserController {
     }
 
  
-  @Get()
-  @Autentication( Roles.CLIENT )
-  hello(@Req() req: Request){
+  // @Get()
+  // @Autentication( Roles.CLIENT )
+  // hello(@Req() req: Request){
     
-    return "hello everyword"
+  //   return "hello everyword"
+  // }
+
+  @Get()
+  findAll(
+    @Query("page") page:string,
+    @Query("limit") limit:string,
+  ){
+     return this.userService.findAllUsers(page, limit);
   }
 
   @Patch(":idUser")

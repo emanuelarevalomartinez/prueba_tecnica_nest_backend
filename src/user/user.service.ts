@@ -20,7 +20,6 @@ import {
 } from './interfaces/user.interfaces';
 import { JwtPayload } from './interfaces/jwt-strategy-payload.interface';
 import { CarService } from 'src/car/car.service';
-import { Car } from 'src/car/entities/car.entity';
 
 @Injectable()
 export class UserService {
@@ -173,17 +172,42 @@ export class UserService {
     };
   }
 
+  async findAllUsers(page: string, limit: string){
+
+    const consultPage = page !== undefined ? Number(page) : 1;
+    const consultLimit = limit !== undefined ? Number(limit) : 5;
+    const skip = ( consultPage - 1 ) * consultLimit;
+
+    return await this.userRepository.find({
+      take: consultLimit,
+      skip: skip,
+      order: { name: 'ASC' },
+      relations: ["cars"],
+    })
+  }
+
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const searchUser = await this.findUserByParam({ id });
+    const searchUser: User = await this.findUserByParam({ id });
 
     if (searchUser) {
       const { ...data } = updateUserDto;
+      const updateUser : User = {
+        id: "",
+        cars: [],
+        email: "",
+        name: "",
+        password: "",
+        roles: [],
+      }
 
       const userExist = await this.findOneByNameOrEmail(data.name, data.email);
 
       if (userExist.nameStock || userExist.emailStock) {
         throw new BadRequestException('user or email already exist');
       }
+
+      updateUser.name = data.name;
+      updateUser.email = data.email;
 
       if (data.roles) {
         data.roles.forEach((rol) => {
@@ -195,13 +219,21 @@ export class UserService {
             throw new BadRequestException('user does not have a valid roles');
           }
         });
+        updateUser.roles = data.roles;
       }
 
       if (data.password) {
-        data.password = await bcrypt.hash(data.password, 10);
+        updateUser.password = await bcrypt.hash(data.password, 10);
       }
 
-      const updateUser = this.userRepository.merge(searchUser, data);
+      if (data.cars) {
+          await this.carService.removeCarsByUserId(id); 
+          const newCars = data.cars.map(carData => this.carService.create({
+            ...carData,
+            user: searchUser
+        }));
+        updateUser.cars = await Promise.all(newCars);
+      }
 
       await this.userRepository.save(updateUser);
       return updateUser;

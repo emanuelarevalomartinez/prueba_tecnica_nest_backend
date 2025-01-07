@@ -48,13 +48,17 @@ constructor(
     const dateInit = new Date(createParkingDto.dateInit);
     const dateEnd = new Date(createParkingDto.dateEnd);
 
+    if( dateInit < new Date() ){
+      throw new BadRequestException("Date initial can not be in the past ");
+    }
+
     if(dateInit >= dateEnd ){
-       throw new BadRequestException("Date init can not be greater that date end");
+       throw new BadRequestException("Date initial can not be greater that date end time");
     }
 
 
     const newParking:Parking = {
-       idParking: uuid(),  
+       id_parking: uuid(),  
        idCar: userExist.cars[carNumber - 1].idCar,
        idUser: userExist.id,
        model: userExist.cars[carNumber - 1].model,
@@ -74,6 +78,8 @@ constructor(
         throw new BadRequestException("There are not more capacity on the parking");
    } else {
 
+    await this.completeAllPastReservations( new Date() );
+
     const posibbleParkigTime = await this.findSameReservationTime(newParking.dateInit, newParking.dateEnd, createParkingDto.positionParking);
 
     if(!posibbleParkigTime){
@@ -83,12 +89,13 @@ constructor(
       await this.historicalService.create({
         activity: `Reservation Parking`,
         idUser: createNewParking.idUser,
-        idCar: createNewParking.idParking,
+        idCar: createNewParking.id_parking,
       })
+
       await this.parkingRepository.save(createNewParking);
 
       return {
-        idParking: createNewParking.idParking,
+        idParking: createNewParking.id_parking,
         idUser: createNewParking.idUser,
         idCar: createNewParking.idCar,
         nameUser: createNewParking.nameUser,
@@ -137,6 +144,22 @@ constructor(
         return response.length == 0;
   }
 
+  async completeAllPastReservations(referentDate: Date){
+        const response: Parking[] = await this.parkingRepository.createQueryBuilder("parking")
+        .select([
+          "to_char(parking.dateEnd, 'YYYY-MM-DD HH24:MI:SS') AS dateend",
+          "parking.id_parking as id_parking"
+        ])
+        .where(" parking.dateEnd <= :referentDate ", { referentDate })
+        .getRawMany()
+
+    response.forEach( async parking => {
+       await this.remove( parking.id_parking, "Finish Reservation" );
+    });
+    
+
+  }
+
   async findAll(page: number, limit: number){
 
     const consultPage = page !== undefined ? Number(page) : 1;
@@ -146,7 +169,7 @@ constructor(
     return await this.parkingRepository
     .createQueryBuilder('parking')
         .select([
-          "parking.idParking as idparking",
+          "parking.id_parking as id_parking",
           "parking.idUser as idpser",
           "parking.idCar as idcar",
           "parking.nameUser as nameuser",
@@ -162,9 +185,13 @@ constructor(
         .getRawMany();
   }
 
+  async updateParking(idParking: string, updateParkingDto: UpdateParkingDto){
+    // TODO implementar
+  }
+
   async findOneParking(idParking: string): Promise<Parking> {
      const response = await this.parkingRepository.findOne( {
-      where: { idParking: idParking }
+      where: { id_parking: idParking }
      } )
 
      if(!response){
@@ -174,13 +201,13 @@ constructor(
      return response;
   }
 
-  async remove(idParking: string): Promise<string> {
+  async remove(idParking: string, reason: string = "Cancel Parking" ): Promise<string> {
 
     const response = await this.findOneParking(idParking);
 
      await this.historicalService.create({
       idCar: response.idCar,
-      activity: "Cancel Parking", 
+      activity: reason, 
       idUser: response.idUser,
       })
     await this.parkingRepository.delete( idParking );
@@ -189,16 +216,4 @@ constructor(
 
       return "Parking reservation deleted successful"
   }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} parking`;
-  // }
-
-  // update(id: number, updateParkingDto: UpdateParkingDto) {
-  //   return `This action updates a #${id} parking`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} parking`;
-  // }
 }
