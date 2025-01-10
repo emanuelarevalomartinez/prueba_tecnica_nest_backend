@@ -10,6 +10,9 @@ export class User {
 @PrimaryColumn("uuid", { nullable: false })
 id: string;
 
+@OneToMany(() => Parking, parking => parking.user)
+  parkings: Parking[];
+
 
 @Column("text", { nullable: false })
 name: string;

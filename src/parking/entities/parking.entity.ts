@@ -1,7 +1,5 @@
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
-
-
+import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
 
 @Entity("parking")
 export class Parking {
@@ -11,10 +9,10 @@ id_parking:string;
 
 
 @Column("uuid", { nullable: false })
-idUser:string;
+id_car:string;
 
-@Column("uuid", { nullable: false })
-idCar: string;
+@ManyToOne(() => User, user => user.parkings, { nullable: false })
+user: User;
 
 @Column("text", {  nullable: false})
 nameUser: string;

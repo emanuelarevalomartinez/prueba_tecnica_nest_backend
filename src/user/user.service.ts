@@ -17,6 +17,7 @@ import {
   CreateUserValidateExist,
   LoginUserInterface,
   RegisterUserInterface,
+  UpdateUserInteface,
 } from './interfaces/user.interfaces';
 import { JwtPayload } from './interfaces/jwt-strategy-payload.interface';
 import { CarService } from 'src/car/car.service';
@@ -59,6 +60,7 @@ export class UserService {
       id: uuid(),
       name: data.name,
       cars: [],
+      parkings: [],
       password: await bcrypt.hash(data.password, 10),
     };
 
@@ -85,6 +87,7 @@ export class UserService {
     }
 
     return {
+      id: createNewUser.id,
       name: createNewUser.name,
       email: createNewUser.email,
       roles: createNewUser.roles,
@@ -114,6 +117,7 @@ export class UserService {
     }
 
     return {
+      id: userFound.id,
       name: userFound.name,
       email: userFound.email,
       roles: userFound.roles,
@@ -123,10 +127,24 @@ export class UserService {
   }
 
   async findUserByParam(param: { [key: string]: string }): Promise<User> {
-    const findUser = await this.userRepository.findOne({
-      where: param,
-      relations: ['cars'],
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.parkings', 'parkings')
+      .leftJoinAndSelect('user.cars', 'cars')
+      .addSelect(
+        "to_char(parkings.dateInit, 'YYYY-MM-DD HH24:MI:SS')",
+        'parkings_dateInit',
+      )
+      .addSelect(
+        "to_char(parkings.dateEnd, 'YYYY-MM-DD HH24:MI:SS')",
+        'parkings_dateEnd',
+      );
+    Object.keys(param).forEach((key) => {
+      queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: param[key] });
     });
+
+    const findUser = await queryBuilder.getOne();
+
     if (!findUser) {
       throw new NotFoundException(
         `user with ${JSON.stringify(param)} not found`,
@@ -172,42 +190,68 @@ export class UserService {
     };
   }
 
-  async findAllUsers(page: string, limit: string){
-
+  async findAllUsers(page: string, limit: string): Promise<User[]>{
     const consultPage = page !== undefined ? Number(page) : 1;
     const consultLimit = limit !== undefined ? Number(limit) : 5;
-    const skip = ( consultPage - 1 ) * consultLimit;
+    const skip = (consultPage - 1) * consultLimit;
 
-    return await this.userRepository.find({
-      take: consultLimit,
-      skip: skip,
-      order: { name: 'ASC' },
-      relations: ["cars"],
-    })
+    const response = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.parkings', 'parkings')
+      .leftJoinAndSelect('user.cars', 'cars')
+      .addSelect(
+        "to_char(parkings.dateInit, 'YYYY-MM-DD HH24:MI:SS')",
+        'parkings_dateInit',
+      )
+      .addSelect(
+        "to_char(parkings.dateEnd, 'YYYY-MM-DD HH24:MI:SS')",
+        'parkings_dateEnd',
+      )
+      .orderBy('user.name', 'ASC')
+      .take(consultLimit)
+      .skip(skip)
+      .getMany();
+
+    return response;
   }
 
-  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async updateUser(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UpdateUserInteface> {
     const searchUser: User = await this.findUserByParam({ id });
 
     if (searchUser) {
       const { ...data } = updateUserDto;
-      const updateUser : User = {
-        id: "",
-        cars: [],
-        email: "",
-        name: "",
-        password: "",
-        roles: [],
-      }
+      const updateUser: User = {
+        id: searchUser.id,
+        cars: searchUser.cars,
+        email: searchUser.email,
+        name: searchUser.name,
+        parkings: [], // TODO en caso de modificar desde aqui cambiar esto
+        password: searchUser.password,
+        roles: searchUser.roles,
+      };
 
       const userExist = await this.findOneByNameOrEmail(data.name, data.email);
 
-      if (userExist.nameStock || userExist.emailStock) {
-        throw new BadRequestException('user or email already exist');
+      if (data.name) {
+        if (searchUser.name !== data.name) {
+          if (userExist.nameStock) {
+            throw new BadRequestException('user or email already exist');
+          }
+        }
+        updateUser.name = data.name;
       }
 
-      updateUser.name = data.name;
-      updateUser.email = data.email;
+      if (data.email) {
+        if (searchUser.email !== data.email) {
+          if (userExist.emailStock) {
+            throw new BadRequestException('user or email already exist');
+          }
+        }
+        updateUser.email = data.email;
+      }
 
       if (data.roles) {
         data.roles.forEach((rol) => {
@@ -227,26 +271,44 @@ export class UserService {
       }
 
       if (data.cars) {
-          await this.carService.removeCarsByUserId(id); 
-          const newCars = data.cars.map(carData => this.carService.create({
+        await this.carService.removeCarsByUserId(id);
+        const newCars = data.cars.map((carData) =>
+          this.carService.create({
             ...carData,
-            user: searchUser
-        }));
+            user: searchUser,
+          }),
+        );
         updateUser.cars = await Promise.all(newCars);
       }
 
+      updateUser.id = searchUser.id;
+
       await this.userRepository.save(updateUser);
-      return updateUser;
+
+      return {
+        id: updateUser.id,
+        name: updateUser.name,
+        email: updateUser.email,
+        password: updateUser.password,
+        cars: updateUser.cars.map((car) => ({
+          idCar: car.idCar,
+          make: car.make,
+          model: car.model,
+        })),
+        roles: updateUser.roles,
+      };
     } else {
       throw new NotFoundException(`User with id ${id} not found`);
     }
   }
 
-  async deleteUser(idUser: string) {
+  async deleteUser(idUser: string): Promise<string> {
     const { affected } = await this.userRepository.delete(idUser);
 
     if (affected == 0) {
       throw new NotFoundException(`user with id ${idUser} not found`);
+    } else {
+      return "User delete successful"
     }
   }
 

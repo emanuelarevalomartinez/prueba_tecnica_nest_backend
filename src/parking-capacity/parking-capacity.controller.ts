@@ -13,28 +13,10 @@ export class ParkingCapacityController {
      return this.parkingCapacityService.updateParkingCapacity(capacityNumber);
   }
 
-  // @Post()
-  // create(@Body() createParkingCapacityDto: CreateParkingCapacityDto) {
-  //   return this.parkingCapacityService.create(createParkingCapacityDto);
-  // }
+  @Get()
+  getAllParkingCapacity(){
+    return this.parkingCapacityService.getParkingCapacity();
+  }
 
-  // @Get()
-  // findAll() {
-  //   return this.parkingCapacityService.findAll();
-  // }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.parkingCapacityService.findOne(+id);
-  // }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateParkingCapacityDto: UpdateParkingCapacityDto) {
-  //   return this.parkingCapacityService.update(+id, updateParkingCapacityDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.parkingCapacityService.remove(+id);
-  // }
 }

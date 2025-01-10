@@ -3,9 +3,9 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 @Entity('parkingCapacity')
 export class ParkingCapacity {
 
-  @PrimaryColumn("text", { })
+  @PrimaryColumn("text")
   typeCount: string;
 
-  @Column('numeric', {  })
+  @Column('numeric', { nullable: true })
   capacityParking: number;  
 }

@@ -7,42 +7,45 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class ParkingCapacityService {
-
-
   constructor(
     @InjectRepository(ParkingCapacity)
     private readonly parkingCapacityRepository: Repository<ParkingCapacity>,
-  ){
+  ) {}
 
-  }
+  async updateParkingCapacity(newcapacity: number): Promise<number> {
+    const curretCapacity = await this.parkingCapacityRepository.findOne({
+      where: {
+        typeCount: 'capacity',
+      },
+    });
 
-  async updateParkingCapacity(newcapacity: number){
-        const curretCapacity = await this.parkingCapacityRepository.findOne({
-         where: {
-          typeCount: "capacity"
-         },
-        });
-
-        if(curretCapacity.typeCount == null){
-            await this.parkingCapacityRepository.save({
-              typeCount: "capacity",
-              capacityParking: newcapacity,
-            })
-        }
-
-        await this.parkingCapacityRepository.save({
-          typeCount: "capacity",
-          capacityParking: newcapacity,
-        })
-
-  }
-
-
-  async getParkingCapacity() {
-      const cant: ParkingCapacity[] = await this.parkingCapacityRepository.find({
-        take: 1,
+    if (!curretCapacity) {
+      const response = await this.parkingCapacityRepository.save({
+        typeCount: 'capacity',
+        capacityParking: newcapacity,
       });
+      return response.capacityParking;
+    }
 
-      return cant[0].capacityParking;
+    const response = await this.parkingCapacityRepository.save({
+      typeCount: 'capacity',
+      capacityParking: newcapacity,
+    });
+
+    return response.capacityParking;
+  }
+
+  async getParkingCapacity(): Promise<number> {
+    let capacity: ParkingCapacity[] = await this.parkingCapacityRepository.find(
+      {
+        take: 1,
+      },
+    );
+
+    if (capacity.length == 0) {
+      let currentCapacity = await this.updateParkingCapacity(10);
+      return currentCapacity;
+    }
+    return capacity[0].capacityParking;
   }
 }

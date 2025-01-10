@@ -35,7 +35,27 @@ export class CarService {
   }
 
  async updateCar(idCar: string, updateCarDto: UpdateCarDto){
-     // TODO implementar
+  const updateCar: Car = await this.carsRepository.findOne({ where: { idCar: idCar } });
+
+  if(!updateCar){
+     throw new NotFoundException(`Car with id: ${idCar} not found`);
+  }
+    if(updateCarDto.model){
+       updateCar.model = updateCarDto.model;
+    }
+
+    if(updateCarDto.make){
+      updateCar.make = updateCarDto.make;
+    }
+
+    if(updateCarDto.user){
+      updateCar.user = updateCarDto.user;
+    }
+
+    const saveNewCar = this.carsRepository.create(updateCar);
+    await this.carsRepository.save(saveNewCar);
+    
+     return saveNewCar;
  }
 
   async findOne(idCar: string): Promise<Car> {
@@ -57,23 +77,26 @@ export class CarService {
     return await this.carsRepository.find({
       take: consultLimit,
       skip: skip,
+      order: { make: 'ASC' },
       relations: ['user'],
     });
   }
 
-  async remove(idCar: string) {
+  async remove(idCar: string): Promise<string> {
     const { affected } = await this.carsRepository.delete(idCar);
 
     if (affected == 0) {
       throw new NotFoundException(`Car with id ${idCar} not found`);
+    } else {
+      return "Car delete successful";
     }
   }
 
-  async removeCarsByUserId(userId: string) {
+  async removeCarsByUserId(userId: string): Promise<string> {
    const { affected } = await this.carsRepository.delete({ user: { id: userId } });
 
    if( affected === 0 ){
-     return `There was any car with id: ${userId} for delete`
+     return `There was any car with user Id: ${userId} for delete`
    } else {
     return "All cars with that user id were delete"
    }

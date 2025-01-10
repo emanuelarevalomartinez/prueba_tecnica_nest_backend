@@ -59,8 +59,9 @@ constructor(
 
     const newParking:Parking = {
        id_parking: uuid(),  
-       idCar: userExist.cars[carNumber - 1].idCar,
-       idUser: userExist.id,
+       id_car: userExist.cars[carNumber - 1].idCar,
+      //  idUser: userExist.id,
+       user: userExist,
        model: userExist.cars[carNumber - 1].model,
        make: userExist.cars[carNumber - 1].make,
        dateInit: dateInit,
@@ -88,16 +89,16 @@ constructor(
 
       await this.historicalService.create({
         activity: `Reservation Parking`,
-        idUser: createNewParking.idUser,
-        idCar: createNewParking.id_parking,
+        idUser: createNewParking.user.id,
+        idCar: createNewParking.user.cars[ carNumber - 1 ].idCar,
       })
 
       await this.parkingRepository.save(createNewParking);
 
       return {
         idParking: createNewParking.id_parking,
-        idUser: createNewParking.idUser,
-        idCar: createNewParking.idCar,
+        idUser: createNewParking.user.id,
+        idCar: createNewParking.user.cars[ carNumber - 1 ].idCar,
         nameUser: createNewParking.nameUser,
         make: createNewParking.make,
         model: createNewParking.model,
@@ -166,12 +167,12 @@ constructor(
     const consultLimit = limit !== undefined ? Number(limit) : 5;
     const skip = ( consultPage - 1 ) * consultLimit;
 
-    return await this.parkingRepository
+    const response = await this.parkingRepository
     .createQueryBuilder('parking')
         .select([
           "parking.id_parking as id_parking",
-          "parking.idUser as idpser",
-          "parking.idCar as idcar",
+          // "parking.idUser as idpser",
+          // "parking.idCar as idcar",
           "parking.nameUser as nameuser",
           "parking.make as make",
           "parking.model as model",
@@ -179,20 +180,41 @@ constructor(
           "to_char(parking.dateInit, 'YYYY-MM-DD HH24:MI:SS') AS dateinit",
           "to_char(parking.dateEnd, 'YYYY-MM-DD HH24:MI:SS') AS dateend",
         ])
+      //  .innerJoinAndSelect("parking.user", "user")
         .orderBy("parking.parkingPosition", 'ASC')
         .take( consultLimit )  
         .skip( skip )
         .getRawMany();
+
+        console.log("responsse", response);
+        
+
+        return response;
   }
 
   async updateParking(idParking: string, updateParkingDto: UpdateParkingDto){
     // TODO implementar
   }
 
-  async findOneParking(idParking: string): Promise<Parking> {
-     const response = await this.parkingRepository.findOne( {
-      where: { id_parking: idParking }
-     } )
+  async findOneParking(idParking: string)
+  // : Promise<Parking> 
+  {
+    const response = await this.parkingRepository.
+                     createQueryBuilder("parking")
+                    .select(
+                       ["parking.id_parking as id_parking",
+                        "parking.id_car as id_car",
+                        "parking.userId as userid",
+                        "parking.nameUser as nameuser",
+                        "parking.make as make",
+                        "parking.model as model",
+                        "parking.parkingPosition as parkingposition",
+                        "to_char(parking.dateInit, 'YYYY-MM-DD HH24:MI:SS') AS dateinit",
+                        "to_char(parking.dateEnd, 'YYYY-MM-DD HH24:MI:SS') AS dateend",
+                      ])
+                    .where( "parking.id_parking = :idParking",{ idParking } )
+                    .leftJoinAndSelect("parking.user","user")
+                    .getRawOne();
 
      if(!response){
        throw new NotFoundException(` Parking with id ${idParking} not found `)
@@ -204,15 +226,15 @@ constructor(
   async remove(idParking: string, reason: string = "Cancel Parking" ): Promise<string> {
 
     const response = await this.findOneParking(idParking);
+    
+    // FIXME mejorar este codigo para que la interface que estoy creando sea lo que se devuelva en la peticion get One
 
      await this.historicalService.create({
-      idCar: response.idCar,
+      idCar: response.id_car, 
       activity: reason, 
-      idUser: response.idUser,
+      idUser: response.userid,
       })
     await this.parkingRepository.delete( idParking );
-
-      
 
       return "Parking reservation deleted successful"
   }

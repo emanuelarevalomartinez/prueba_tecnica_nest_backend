@@ -30,6 +30,14 @@ export class CarController {
      return this.carService.findOne(idCar);
   }
 
+  @Patch(":idCar")
+  updateCar(
+    @Param("idCar") idCcar:string,
+    @Body() updatecarDto:UpdateCarDto,
+  ){
+     return this.carService.updateCar(idCcar, updatecarDto);
+  }
+
    @Delete(':idCar')
   remove(@Param('idCar') idCar: string) {
     return this.carService.remove(idCar);
