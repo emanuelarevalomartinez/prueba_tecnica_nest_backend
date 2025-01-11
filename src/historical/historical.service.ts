@@ -14,7 +14,6 @@ export class HistoricalService {
   // TODO comenzar a hacer el testing dentro de los metodos 
   // TODO hacer la documentacion para descargar y ejecutar la api en un entorno personal usando markdown
   // TODO utilizar swaer para documentar la api
-  // TODO añadir la ruta global /api
   // TODO colecion de postmand de como consultar la api
   // TODO hacer el modelo de datos del negocio ( las relaciones en la base de datos )
 

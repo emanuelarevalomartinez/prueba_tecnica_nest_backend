@@ -6,6 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes( new ValidationPipe())
   app.enableCors(); // permite que se puedan recibir solicitudes desde el frontend 
+  app.setGlobalPrefix("api");
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,

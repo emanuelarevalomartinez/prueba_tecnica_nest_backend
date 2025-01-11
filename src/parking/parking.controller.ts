@@ -37,6 +37,14 @@ export class ParkingController {
     return this.parkingService.findOneParking(idParking);
   }
 
+  @Patch(":idParking")
+  update(
+    @Param("idParking") idParking:string,
+    @Body() updateParkingDto: UpdateParkingDto,
+  ){
+    return this.parkingService.updateParking(idParking,updateParkingDto);
+  }
+
   @Delete(':idParking')
   remove(@Param('idParking') idParking: string) {
     return this.parkingService.remove(idParking);
