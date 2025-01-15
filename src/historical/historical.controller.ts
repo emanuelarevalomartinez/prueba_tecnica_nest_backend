@@ -11,7 +11,9 @@ import {
 import { HistoricalService } from './historical.service';
 import { CreateHistoricalDto } from './dto/create-historical.dto';
 import { UpdateHistoricalDto } from './dto/update-historical.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags("Historical")
 @Controller('historical')
 export class HistoricalController {
   constructor(private readonly historicalService: HistoricalService) {}

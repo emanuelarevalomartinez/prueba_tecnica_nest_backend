@@ -2,7 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { CarService } from './car.service';
 import { CreateCarDto } from './dto/create-car.dto';
 import { UpdateCarDto } from './dto/update-car.dto';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Car } from './entities/car.entity';
 
+@ApiTags("Car")
 @Controller('car')
 export class CarController {
   constructor(
@@ -11,6 +14,7 @@ export class CarController {
 
 
   @Post()
+  @ApiResponse( { status: 200, description: "Create new car", type: Car } )
   create(@Body() createCarDto: CreateCarDto) {
     return this.carService.create(createCarDto);
   }
