@@ -1,4 +1,5 @@
-import { PartialType } from '@nestjs/mapped-types';
+// import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateCarDto } from './create-car.dto';
 import { IsOptional, IsString } from 'class-validator';
 import { User } from 'src/user/entities/user.entity';

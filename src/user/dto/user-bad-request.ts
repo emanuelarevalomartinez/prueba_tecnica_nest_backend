@@ -41,3 +41,43 @@ export class UserNameNotFoundOrWrongPassword {
   }) 
   statusCode: number;
 }
+
+export class UserByParamNotFound{
+  @ApiProperty({
+    type: 'string',
+    example: 'user with {\"{key}\":\"{param}\"} not found',
+  })
+  message: string;
+
+  @ApiProperty({ 
+    type: 'string', 
+    example: 'Not Found' 
+  }) 
+  error: string;
+
+  @ApiProperty({ 
+    type: 'number', 
+    example: 404 
+  }) 
+  statusCode: number;
+}
+
+export class UsersNotFound{
+  @ApiProperty({
+    type: 'string',
+    example: 'error',
+  })
+  message: string;
+
+  @ApiProperty({ 
+    type: 'string', 
+    example: 'Bad Request' 
+  }) 
+  error: string;
+
+  @ApiProperty({ 
+    type: 'number', 
+    example: 500 
+  }) 
+  statusCode: number;
+}

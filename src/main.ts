@@ -19,6 +19,14 @@ async function bootstrap() {
    .setDescription('A possible real car parking')
    .setVersion('1.0')
   // .addTag('cats')
+  .addBearerAuth(
+    {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    },
+    'access-token', // Nombre del token que aparecerá en Swagger UI
+  )
    .build();
  const documentFactory = () => SwaggerModule.createDocument(app, config);
  SwaggerModule.setup('api', app, documentFactory);

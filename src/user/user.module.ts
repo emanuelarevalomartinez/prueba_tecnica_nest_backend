@@ -31,6 +31,6 @@ import { JwTokenStrategy } from './strategy/jwtStrategy';
   ],
   controllers: [UserController],
   providers: [UserService,JwTokenStrategy],
-  exports: [UserService],
+  exports: [UserService, PassportModule, JwTokenStrategy, JwtModule],
 })
 export class UserModule {}
