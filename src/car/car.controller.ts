@@ -26,8 +26,6 @@ export class CarController {
     return this.carService.create(createCarDto);
   }
 
-// TODO me quede añadiendo la documentación de este modulo
-
   @Get()
   @Autentication( Roles.CLIENT, Roles.EMPLOYEE, Roles.ADMIN )
   @ApiBearerAuth('access-token') 
@@ -53,6 +51,11 @@ export class CarController {
   @Get(":idCar")
   @Autentication( Roles.CLIENT, Roles.EMPLOYEE, Roles.ADMIN )
   @ApiBearerAuth('access-token') 
+  @ApiParam({ 
+    name: 'idCar', 
+    required: true, 
+    description: 'Car id', 
+  }) 
   @ApiResponse( { status: 201, description: "Find Car with id", type: GetOneCarResponse } )
   @ApiResponse( { status: 400, description: "Error searching Car by id", type: CarGenericBadResponse } )
   findOne(

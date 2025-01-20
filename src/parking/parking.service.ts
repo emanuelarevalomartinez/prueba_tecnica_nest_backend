@@ -206,8 +206,6 @@ export class ParkingService {
       .skip(skip)
       .getRawMany();
 
-    console.log('responsse', response);
-
     return response;
   }
 
